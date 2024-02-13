@@ -3,6 +3,10 @@ var express = require('express')
 var axios = require('axios')
 var path = require('path')
 var cors = require('cors');
+// const sql = require('mssql');
+const { poolPromise, sql, execApi } = require('./database'); // Adjust the path to where your database.js file is located
+
+
 
 require('dotenv').config();
 
@@ -22,6 +26,42 @@ var corsOptions = {
   origin: 'http://localhost:8081' // Adjust if your React app's origin is different
 };
 
+//---------------------------------
+// SQL Server connection
+//---------------------------------
+
+// const config = {
+//   user: process.env.AICRAFTER_DB_USER,
+//   password:  process.env.AICRAFTER_DB_PASSWORD, 
+//   server: process.env.AICRAFTER_DB_SERVER, 
+//   database: 'AiCrafter',
+//   options: {
+//     encrypt: true, 
+//     trustServerCertificate: false, 
+//   }
+// };
+// sql.connect(config).then(pool => {
+//   // You can execute SQL queries here
+//   console.log('Connected to SQL Server successfully!');
+// }).catch(error => {
+//   console.error('Error connecting to SQL Server:', error);
+// });
+
+// Function to execute a stored procedure with parameters
+// function execApi(procName, params) {
+//   return new Promise((resolve, reject) => {
+//     connection.query(`CALL ${procName}(?)`, [params], (error, results, fields) => {
+//       if (error) {
+//         reject(error);
+//       }
+//       resolve(results);
+//     });
+//   });
+// }
+
+//---------------------------------
+//---------------------------------
+
 app.use(cors(corsOptions)); // Use cors middleware with options
 
 
@@ -29,114 +69,81 @@ app.get('/hello', (req, res) => {
     res.send('Hello World!');
 });
 
-app.get('/getMessagesByProjectId', (req, res) => {
+app.get('/getMessagesByProjectId', async (req, res) => {
   const projectId = req.query.projectId;
-  const f = [
-    {
-        "Id": 3,
-        "DeploymentCode": 1,
-        "ProjectId": "ProjectId-123456789",
-        "User": "Create a round blue building",
-        "Assistant": "<script>\r\nconst scene = new THREE.Scene();\r\nconst camera = new THREE.PerspectiveCamera(75, window.innerWidth \/ window.innerHeight, 0.1, 1000);\r\nconst renderer = new THREE.WebGLRenderer();\r\nrenderer.setSize(window.innerWidth, window.innerHeight);\r\ndocument.body.appendChild(renderer.domElement);\r\n\r\nfunction createFloor(x, y, z, color) {\r\n    const geometry = new THREE.BoxGeometry(10, 3, 10);\r\n    const material = new THREE.MeshBasicMaterial({ color: color });\r\n    const floor = new THREE.Mesh(geometry, material);\r\n    floor.position.set(x, y, z);\r\n    scene.add(floor);\r\n\r\n    const edges = new THREE.EdgesGeometry(geometry);\r\n    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));\r\n    line.position.set(x, y, z);\r\n    scene.add(line);\r\n}\r\n\r\nfunction createApartment(x, z, floors) {\r\n    const floorHeight = 3;\r\n    const colors = [0xFEEAA5, 0xD8DCFF];\r\n\r\n    for (let i = 0; i < floors; i++) {\r\n        const y = (i * floorHeight) + (floorHeight \/ 2) - 0.5;\r\n        const color = colors[i % colors.length];\r\n        createFloor(x, y, z, color);\r\n    }\r\n}\r\n\r\nfunction createApartments() {\r\n    for (let i = 0; i < 50; i++) {\r\n        const x = Math.random() * 800 - 400;\r\n        const z = Math.random() * 800 - 400;\r\n        const floors = Math.floor(Math.random() * 8) + 3; \/\/ 3 to 10 floors\r\n        createApartment(x, z, floors);\r\n    }\r\n}\r\n\r\nfunction createShoppingMall() {\r\n    const geometry = new THREE.BoxGeometry(100, 30, 100);\r\n    const material = new THREE.MeshBasicMaterial({ color: 0x8A2BE2 });\r\n    const mall = new THREE.Mesh(geometry, material);\r\n    mall.position.set(0, 15, 0);\r\n    scene.add(mall);\r\n\r\n    const edges = new THREE.EdgesGeometry(geometry);\r\n    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));\r\n    line.position.set(0, 15, 0);\r\n    scene.add(line);\r\n}\r\n\r\ncreateApartments();\r\ncreateShoppingMall();\r\n\r\ncamera.position.set(200, 100, 400);\r\ncamera.lookAt(scene.position);\r\n\r\nlet angle = 0;\r\nconst radius = 800;\r\n\r\nfunction animate() {\r\n    requestAnimationFrame(animate);\r\n\r\n    angle += 0.001;\r\n\r\n    camera.position.x = radius * Math.sin(angle);\r\n    camera.position.z = radius * Math.cos(angle);\r\n    camera.lookAt(new THREE.Vector3(0, 50, 0));\r\n\r\n    renderer.render(scene, camera);\r\n}\r\n\r\nanimate();\r\n\r\n<\/script>",
-        "Prompt_tokens": 567,
-        "Completion_tokens": 607,
-        "Total_tokens": 1174,
-        "CreatedAt": "2024-02-13T15:17:39.0025394",
-        "UpdatedAt": "2024-02-13T15:22:50.5518346",
-        "IsDeleted": false
-    },
-    {
-        "Id": 4,
-        "DeploymentCode": 1,
-        "ProjectId": "ProjectId-123456789",
-        "User": "Add a TV-tower in the center of the building. ",
-        "Assistant": "<script>  \r\n    \/\/ Set up the scene, camera, and renderer  \r\n    const scene = new THREE.Scene();  \r\n    const camera = new THREE.PerspectiveCamera(75, window.innerWidth \/ window.innerHeight, 0.1, 1000);  \r\n    const renderer = new THREE.WebGLRenderer();  \r\n    renderer.setSize(window.innerWidth, window.innerHeight);  \r\n    document.body.appendChild(renderer.domElement);  \r\n  \r\n    \/\/ Add a basic ambient light and a directional light for better visibility  \r\n    const ambientLight = new THREE.AmbientLight(0x404040); \/\/ Soft white light  \r\n    scene.add(ambientLight);  \r\n    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); \/\/ White directional light  \r\n    scene.add(directionalLight);  \r\n  \r\n    \/\/ Create a round blue building  \r\n    const buildingGeometry = new THREE.CylinderGeometry(5, 5, 20, 32); \/\/ Parameters: top radius, bottom radius, height, radial segments  \r\n    const buildingMaterial = new THREE.MeshPhongMaterial({color: 0x0000ff}); \/\/ Blue color  \r\n    const buildingCylinder = new THREE.Mesh(buildingGeometry, buildingMaterial);  \r\n      \r\n    scene.add(buildingCylinder);  \r\n  \r\n    \/\/ Add a TV-tower on top of the building  \r\n    const towerBaseGeometry = new THREE.CylinderGeometry(2, 2.5, 4, 16); \/\/ Smaller base for the tower  \r\n    const towerBaseMaterial = new THREE.MeshPhongMaterial({color: 0x888888}); \/\/ Grey color for the base  \r\n    const towerBaseMesh = new THREE.Mesh(towerBaseGeometry, towerBaseMaterial);  \r\n      \r\n    towerBaseMesh.position.y = 12; \/\/ Position the base on top of the building  \r\n  \r\n    scene.add(towerBaseMesh);  \r\n  \r\n    const towerAntennaGeometry = new THREE.CylinderGeometry(0.5, 1.5, 10, 16); \/\/ Antenna part of the tower  \r\n    const towerAntennaMaterial = new THREE.MeshPhongMaterial({color: 0xaaaaaa}); \/\/ Lighter grey for the antenna  \r\n    const towerAntennaMesh = new THREE.Mesh(towerAntennaGeometry, towerAntennaMaterial);  \r\n      \r\n    towerAntennaMesh.position.y = 17; \/\/ Position the antenna on top of the base  \r\n  \r\n    scene.add(towerAntennaMesh);  \r\n  \r\ncamera.position.z=50;  \r\n  \r\nfunction animate() {  \r\nrequestAnimationFrame(animate);  \r\nrenderer.render(scene,camera);  \r\n}  \r\n  \r\nanimate();  \r\n<\/script>",
-        "Prompt_tokens": 567,
-        "Completion_tokens": 607,
-        "Total_tokens": 1174,
-        "CreatedAt": "2024-02-13T15:35:49.0330200",
-        "UpdatedAt": "2024-02-13T17:16:42.1486515",
-        "IsDeleted": false
-    },
-    {
-        "Id": 6,
-        "DeploymentCode": 1,
-        "ProjectId": "ProjectId-123456789",
-        "User": "Set up a school beside the current building",
-        "Assistant": "<script>  \r\n    \/\/ Set up the scene, camera, and renderer  \r\n    const scene = new THREE.Scene();  \r\n    const camera = new THREE.PerspectiveCamera(75, window.innerWidth \/ window.innerHeight, 0.1, 1000);  \r\n    const renderer = new THREE.WebGLRenderer();  \r\n    renderer.setSize(window.innerWidth, window.innerHeight);  \r\n    document.body.appendChild(renderer.domElement);  \r\n  \r\n    \/\/ Add a basic ambient light and a directional light for better visibility  \r\n    const ambientLight = new THREE.AmbientLight(0x404040); \/\/ Soft white light  \r\n    scene.add(ambientLight);  \r\n    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); \/\/ White directional light  \r\n    scene.add(directionalLight);  \r\n  \r\n    \/\/ Create a round blue building (the original building)  \r\n    const buildingGeometry = new THREE.CylinderGeometry(5, 5, 20, 32); \/\/ Parameters: top radius, bottom radius, height, radial segments  \r\n    const buildingMaterial = new THREE.MeshPhongMaterial({color: 0x0000ff}); \/\/ Blue color  \r\n    const buildingCylinder = new THREE.Mesh(buildingGeometry, buildingMaterial);  \r\n      \r\n    scene.add(buildingCylinder);  \r\n  \r\n    \/\/ Add a TV-tower on top of the building  \r\n    const towerBaseGeometry = new THREE.CylinderGeometry(2, 2.5, 4, 16); \/\/ Smaller base for the tower  \r\n    const towerBaseMaterial = new THREE.MeshPhongMaterial({color: 0x888888}); \/\/ Grey color for the base  \r\n    const towerBaseMesh = new THREE.Mesh(towerBaseGeometry, towerBaseMaterial);  \r\n      \r\n    towerBaseMesh.position.y = 12; \/\/ Position the base on top of the building  \r\n  \r\n    scene.add(towerBaseMesh);  \r\n  \r\n    const towerAntennaGeometry = new THREE.CylinderGeometry(0.5, 1.5, 10, 16); \/\/ Antenna part of the tower  \r\n    const towerAntennaMaterial = new THREE.MeshPhongMaterial({color: 0xaaaaaa}); \/\/ Lighter grey for the antenna  \r\n    const towerAntennaMesh = new THREE.Mesh(towerAntennaGeometry, towerAntennaMaterial);  \r\n      \r\n    towerAntennaMesh.position.y = 17; \/\/ Position the antenna on top of the base  \r\n  \r\n    scene.add(towerAntennaMesh);  \r\n    \r\n\t\/\/ Set up a school beside the current building  \r\n  \r\n\tconst schoolWidth=10;  \r\n\tconst schoolHeight=6;  \r\n\tconst schoolDepth=8;  \r\n  \r\n\tconst schoolGeometry=new THREE.BoxGeometry(schoolWidth,schoolHeight,schoolDepth);  \r\n\tconst schoolMaterial=new THREE.MeshPhongMaterial({color:0xffd700}); \/\/ Gold color for school  \r\n  \r\n\tconst school=new THREE.Mesh(schoolGeometry,schoolMaterial);  \r\n  \r\n\tschool.position.set(-15,-7,-10); \/\/ Positioning the school beside the current building  \r\n  \r\n\tscene.add(school);  \r\n  \r\n  \r\n\tcamera.position.z=50;  \r\n  \r\n\tfunction animate() {  \r\n\trequestAnimationFrame(animate);  \r\n\trenderer.render(scene,camera);  \r\n}  \r\n  \r\nanimate();  \r\n<\/script> ",
-        "Prompt_tokens": 3123,
-        "Completion_tokens": 321,
-        "Total_tokens": 3213,
-        "CreatedAt": "2024-02-13T17:12:59.6773922",
-        "UpdatedAt": "2024-02-13T17:15:03.3979051",
-        "IsDeleted": false
-    }
-]
-    res.send(f);
-});
 
-app.get('/generateProjectMessage', (req, res) => {
-  const { projectId, deploymentCode, user } = req.query;
-  const f = {
-      projectId, 
-    deploymentCode,
-    user
+  const procName = 'Get_MessagesByProjectId'; 
+  const params = { projectId: projectId }; 
+  try {
+    const result = await execApi(procName, params);
+    return res.send(result);
+  } catch (error) {
+    console.error('Error executing stored procedure:', error);
+    return res.status(500).send('Error message explaining the issue');
   }
-    res.send(f);
 });
 
-app.post('/upsertMessages', (req, res) => {
-  const { prompt_tokens, completion_tokens, total_tokens, assistant } = req.query;
-  const f =  [
-    {
-        "Id": 8,
-        "DeploymentCode": 1,
-        "ProjectId": "ProjectId-123456789",
-        "User": "Make the mall a lot bigger",
-        "Assistant": null,
-        "Prompt_tokens": null,
-        "Completion_tokens": null,
-        "Total_tokens": null,
-        "CreatedAt": "2024-02-13T18:05:34.1431728",
-        "UpdatedAt": null,
-        "IsDeleted": false,
-        "Messages": "[\r\n    {\r\n        \"role\": \"system\",\r\n        \"content\": \"This assistant is designed to provide Three.js scripts specifically for generating simple 3D buildings. It solves complex requests with simple polygons and a rotating camera.\\n\\nOutput Format: The assistant will only provide the Three.js script enclosed within <script> tags, without comments. No other text shall be provided.\"\r\n    },\r\n    {\r\n        \"role\": \"user\",\r\n        \"content\": \"I want 6 apartment buildings, with 4 floors\"\r\n    },\r\n    {\r\n        \"role\": \"assistant\",\r\n        \"content\": \"<script>\\n\\nconst scene = new THREE.Scene();\\nconst camera = new THREE.PerspectiveCamera(75, window.innerWidth \\\/ window.innerHeight, 0.1, 1000);\\nconst renderer = new THREE.WebGLRenderer();\\nrenderer.setSize(window.innerWidth, window.innerHeight);\\ndocument.body.appendChild(renderer.domElement);\\n\\nfunction createFloor(x, y, z, color) {\\n    const geometry = new THREE.BoxGeometry(10, 10, 10);\\n    const material = new THREE.MeshBasicMaterial({ color: color });\\n    const floor = new THREE.Mesh(geometry, material);\\n    floor.position.set(x, y, z);\\n    scene.add(floor);\\n\\n    const edges = new THREE.EdgesGeometry(geometry);\\n    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));\\n    line.position.set(x, y, z);\\n    scene.add(line);\\n}\\n\\nfunction createApartment(x, z) {\\n    const floorCount = 4;\\n    const floorHeight = 10;\\n    const colors = [0xFEEAA5, 0xD8DCFF];\\n\\n    for (let i = 0; i < floorCount; i++) {\\n        const y = (i * floorHeight) + (floorHeight \\\/ 2);\\n        const color = colors[i % colors.length];\\n        createFloor(x, y, z, color);\\n    }\\n}\\n\\nfunction createApartments() {\\n    const radius = 50;\\n    const angleStep = Math.PI * 2 \\\/ 6;\\n\\n    for (let i = 0; i < 6; i++) {\\n        const angle = i * angleStep;\\n        const x = Math.cos(angle) * radius;\\n        const z = Math.sin(angle) * radius;\\n        createApartment(x, z);\\n    }\\n}\\n\\ncreateApartments();\\n\\ncamera.position.set(0, 50, 150);\\ncamera.lookAt(scene.position);\\n\\nlet angle = 0;\\nconst radius = 150;\\n\\nfunction animate() {\\n    requestAnimationFrame(animate);\\n\\n    angle += 0.001;\\n\\n    camera.position.x = radius * Math.sin(angle);\\n    camera.position.z = radius * Math.cos(angle);\\n    camera.lookAt(scene.position);\\n\\n    renderer.render(scene, camera);\\n}\\n\\nanimate();\\n\\n<\\\/script>\"\r\n    }\r\n,{\"role\": \"user\", \"content\": \"Set up a school beside the current building\"},{\"role\": \"assistant\", \"content\": \"<script>  \\r\\n    \\\/\\\/ Set up the scene, camera, and renderer  \\r\\n    const scene = new THREE.Scene();  \\r\\n    const camera = new THREE.PerspectiveCamera(75, window.innerWidth \\\/ window.innerHeight, 0.1, 1000);  \\r\\n    const renderer = new THREE.WebGLRenderer();  \\r\\n    renderer.setSize(window.innerWidth, window.innerHeight);  \\r\\n    document.body.appendChild(renderer.domElement);  \\r\\n  \\r\\n    \\\/\\\/ Add a basic ambient light and a directional light for better visibility  \\r\\n    const ambientLight = new THREE.AmbientLight(0x404040); \\\/\\\/ Soft white light  \\r\\n    scene.add(ambientLight);  \\r\\n    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); \\\/\\\/ White directional light  \\r\\n    scene.add(directionalLight);  \\r\\n  \\r\\n    \\\/\\\/ Create a round blue building (the original building)  \\r\\n    const buildingGeometry = new THREE.CylinderGeometry(5, 5, 20, 32); \\\/\\\/ Parameters: top radius, bottom radius, height, radial segments  \\r\\n    const buildingMaterial = new THREE.MeshPhongMaterial({color: 0x0000ff}); \\\/\\\/ Blue color  \\r\\n    const buildingCylinder = new THREE.Mesh(buildingGeometry, buildingMaterial);  \\r\\n      \\r\\n    scene.add(buildingCylinder);  \\r\\n  \\r\\n    \\\/\\\/ Add a TV-tower on top of the building  \\r\\n    const towerBaseGeometry = new THREE.CylinderGeometry(2, 2.5, 4, 16); \\\/\\\/ Smaller base for the tower  \\r\\n    const towerBaseMaterial = new THREE.MeshPhongMaterial({color: 0x888888}); \\\/\\\/ Grey color for the base  \\r\\n    const towerBaseMesh = new THREE.Mesh(towerBaseGeometry, towerBaseMaterial);  \\r\\n      \\r\\n    towerBaseMesh.position.y = 12; \\\/\\\/ Position the base on top of the building  \\r\\n  \\r\\n    scene.add(towerBaseMesh);  \\r\\n  \\r\\n    const towerAntennaGeometry = new THREE.CylinderGeometry(0.5, 1.5, 10, 16); \\\/\\\/ Antenna part of the tower  \\r\\n    const towerAntennaMaterial = new THREE.MeshPhongMaterial({color: 0xaaaaaa}); \\\/\\\/ Lighter grey for the antenna  \\r\\n    const towerAntennaMesh = new THREE.Mesh(towerAntennaGeometry, towerAntennaMaterial);  \\r\\n      \\r\\n    towerAntennaMesh.position.y = 17; \\\/\\\/ Position the antenna on top of the base  \\r\\n  \\r\\n    scene.add(towerAntennaMesh);  \\r\\n    \\r\\n\\t\\\/\\\/ Set up a school beside the current building  \\r\\n  \\r\\n\\tconst schoolWidth=10;  \\r\\n\\tconst schoolHeight=6;  \\r\\n\\tconst schoolDepth=8;  \\r\\n  \\r\\n\\tconst schoolGeometry=new THREE.BoxGeometry(schoolWidth,schoolHeight,schoolDepth);  \\r\\n\\tconst schoolMaterial=new THREE.MeshPhongMaterial({color:0xffd700}); \\\/\\\/ Gold color for school  \\r\\n  \\r\\n\\tconst school=new THREE.Mesh(schoolGeometry,schoolMaterial);  \\r\\n  \\r\\n\\tschool.position.set(-15,-7,-10); \\\/\\\/ Positioning the school beside the current building  \\r\\n  \\r\\n\\tscene.add(school);  \\r\\n  \\r\\n  \\r\\n\\tcamera.position.z=50;  \\r\\n  \\r\\n\\tfunction animate() {  \\r\\n\\trequestAnimationFrame(animate);  \\r\\n\\trenderer.render(scene,camera);  \\r\\n}  \\r\\n  \\r\\nanimate();  \\r\\n<\\\/script> \"},{\"role\": \"user\", \"content\": \"Make the mall a lot bigger\"}]"
-    }
-]
-
-    res.send(f);
+app.get('/generateProjectMessage', async (req, res) => {
+  const { projectId, deploymentCode, user } = req.query;
+  const procName = 'GenerateProjectMessage'; 
+  const params = { 
+    projectId: projectId,
+    deploymentCode: deploymentCode,
+    user: user
+  }; 
+  try {
+    const result = await execApi(procName, params);
+    return  res.send(result);
+  } catch (error) {
+    console.error('Error executing stored procedure:', error);
+    return res.status(500).send('Error message explaining the issue');
+  }
 });
 
-app.get('/Get_Gpt_Deployments', (req, res) => {
-  const f = [
-    {
-        "Code": 1,
-        "Name": "GPT-4",
-        "Url": "https:\/\/oai-text-eastus-hackathon.openai.azure.com\/openai\/deployments\/gpt-4-0125-Preview\/chat\/completions?api-version=2023-07-01-preview",
-        "ApiKey": "",
-        "Max_tokens": null,
-        "Temperature": 7.000000000000000e-001,
-        "Frequency_penalty": 0.000000000000000e+000,
-        "Presence_penalty": 0.000000000000000e+000,
-        "Top_p": 9.500000000000000e-001,
-        "Stop": null,
-        "Messages": "[\r\n    {\r\n        \"role\": \"system\",\r\n        \"content\": \"This assistant is designed to provide Three.js scripts specifically for generating simple 3D buildings. It solves complex requests with simple polygons and a rotating camera.\\n\\nOutput Format: The assistant will only provide the Three.js script enclosed within <script> tags, without comments. No other text shall be provided.\"\r\n    },\r\n    {\r\n        \"role\": \"user\",\r\n        \"content\": \"I want 6 apartment buildings, with 4 floors\"\r\n    },\r\n    {\r\n        \"role\": \"assistant\",\r\n        \"content\": \"<script>\\n\\nconst scene = new THREE.Scene();\\nconst camera = new THREE.PerspectiveCamera(75, window.innerWidth \\\/ window.innerHeight, 0.1, 1000);\\nconst renderer = new THREE.WebGLRenderer();\\nrenderer.setSize(window.innerWidth, window.innerHeight);\\ndocument.body.appendChild(renderer.domElement);\\n\\nfunction createFloor(x, y, z, color) {\\n    const geometry = new THREE.BoxGeometry(10, 10, 10);\\n    const material = new THREE.MeshBasicMaterial({ color: color });\\n    const floor = new THREE.Mesh(geometry, material);\\n    floor.position.set(x, y, z);\\n    scene.add(floor);\\n\\n    const edges = new THREE.EdgesGeometry(geometry);\\n    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));\\n    line.position.set(x, y, z);\\n    scene.add(line);\\n}\\n\\nfunction createApartment(x, z) {\\n    const floorCount = 4;\\n    const floorHeight = 10;\\n    const colors = [0xFEEAA5, 0xD8DCFF];\\n\\n    for (let i = 0; i < floorCount; i++) {\\n        const y = (i * floorHeight) + (floorHeight \\\/ 2);\\n        const color = colors[i % colors.length];\\n        createFloor(x, y, z, color);\\n    }\\n}\\n\\nfunction createApartments() {\\n    const radius = 50;\\n    const angleStep = Math.PI * 2 \\\/ 6;\\n\\n    for (let i = 0; i < 6; i++) {\\n        const angle = i * angleStep;\\n        const x = Math.cos(angle) * radius;\\n        const z = Math.sin(angle) * radius;\\n        createApartment(x, z);\\n    }\\n}\\n\\ncreateApartments();\\n\\ncamera.position.set(0, 50, 150);\\ncamera.lookAt(scene.position);\\n\\nlet angle = 0;\\nconst radius = 150;\\n\\nfunction animate() {\\n    requestAnimationFrame(animate);\\n\\n    angle += 0.001;\\n\\n    camera.position.x = radius * Math.sin(angle);\\n    camera.position.z = radius * Math.cos(angle);\\n    camera.lookAt(scene.position);\\n\\n    renderer.render(scene, camera);\\n}\\n\\nanimate();\\n\\n<\\\/script>\"\r\n    }\r\n]"
-    },
-    {
-        "Code": 2,
-        "Name": "GPT-3.5 (turbo)",
-        "Url": "https:\/\/oai-text-eastus-hackathon.openai.azure.com\/openai\/deployments\/gpt-35-turbo-0613\/chat\/completions?api-version=2023-07-01-preview",
-        "ApiKey": "",
-        "Max_tokens": null,
-        "Temperature": 7.000000000000000e-001,
-        "Frequency_penalty": 0.000000000000000e+000,
-        "Presence_penalty": 0.000000000000000e+000,
-        "Top_p": 9.500000000000000e-001,
-        "Stop": null,
-        "Messages": "[\r\n{\r\n    \"role\": \"system\",\r\n    \"content\": \"This assistant is designed to provide Three.js scripts specifically for generating simple 3D buildings. It solves complex requests with simple polygons and a rotating camera.\\n\\nOutput Format: The assistant will only provide the Three.js script enclosed within <script> tags, without comments. No other text shall be provided.\"\r\n},\r\n{\r\n    \"role\": \"user\",\r\n    \"content\": \"I want 6 apartment buildings, with 4 floors\"\r\n},\r\n{\r\n    \"role\": \"assistant\",\r\n    \"content\": \"<script>\\n\\nconst scene = new THREE.Scene();\\nconst camera = new THREE.PerspectiveCamera(75, window.innerWidth \\\/ window.innerHeight, 0.1, 1000);\\nconst renderer = new THREE.WebGLRenderer();\\nrenderer.setSize(window.innerWidth, window.innerHeight);\\ndocument.body.appendChild(renderer.domElement);\\n\\nfunction createFloor(x, y, z, color) {\\n    const geometry = new THREE.BoxGeometry(10, 10, 10);\\n    const material = new THREE.MeshBasicMaterial({ color: color });\\n    const floor = new THREE.Mesh(geometry, material);\\n    floor.position.set(x, y, z);\\n    scene.add(floor);\\n\\n    const edges = new THREE.EdgesGeometry(geometry);\\n    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));\\n    line.position.set(x, y, z);\\n    scene.add(line);\\n}\\n\\nfunction createApartment(x, z) {\\n    const floorCount = 4;\\n    const floorHeight = 10;\\n    const colors = [0xFEEAA5, 0xD8DCFF];\\n\\n    for (let i = 0; i < floorCount; i++) {\\n        const y = (i * floorHeight) + (floorHeight \\\/ 2);\\n        const color = colors[i % colors.length];\\n        createFloor(x, y, z, color);\\n    }\\n}\\n\\nfunction createApartments() {\\n    const radius = 50;\\n    const angleStep = Math.PI * 2 \\\/ 6;\\n\\n    for (let i = 0; i < 6; i++) {\\n        const angle = i * angleStep;\\n        const x = Math.cos(angle) * radius;\\n        const z = Math.sin(angle) * radius;\\n        createApartment(x, z);\\n    }\\n}\\n\\ncreateApartments();\\n\\ncamera.position.set(0, 50, 150);\\ncamera.lookAt(scene.position);\\n\\nlet angle = 0;\\nconst radius = 150;\\n\\nfunction animate() {\\n    requestAnimationFrame(animate);\\n\\n    angle += 0.001;\\n\\n    camera.position.x = radius * Math.sin(angle);\\n    camera.position.z = radius * Math.cos(angle);\\n    camera.lookAt(scene.position);\\n\\n    renderer.render(scene, camera);\\n}\\n\\nanimate();\\n\\n<\\\/script>\"\r\n}\r\n]\r\n"
-    }
-]
-    res.send(f);
+app.post('/upsertMessages', async  (req, res) => {
+  const {
+    id,
+    prompt_tokens,
+    completion_tokens,
+    total_tokens,
+    assistant
+  } = req.body;
+
+  console.log(   
+    id,
+    prompt_tokens,
+    completion_tokens,
+    total_tokens,
+    assistant
+ );
+
+  const procName = 'Upsert_Messages'; 
+  const params = { 
+     id,
+     prompt_tokens, 
+     completion_tokens, 
+     total_tokens, 
+     assistant
+  }; 
+  try {
+    const result = await execApi(procName, params);
+    return res.send(result);
+  } catch (error) {
+    console.error('Error executing stored procedure:', error);
+    return res.status(500).send('Error message explaining the issue');
+  }
+});
+
+app.get('/Get_Gpt_Deployments', async  (req, res) => {
+  const procName = 'Get_Gpt_Deployments'; 
+  const params = {}; 
+  try {
+    const result = await execApi(procName, params);
+    return res.send(result);
+  } catch (error) {
+    console.error('Error executing stored procedure:', error);
+    return res.status(500).send('Error message explaining the issue');
+  }
 });
 
 
