@@ -26,44 +26,7 @@ var corsOptions = {
   origin: 'http://localhost:8081' // Adjust if your React app's origin is different
 };
 
-//---------------------------------
-// SQL Server connection
-//---------------------------------
-
-// const config = {
-//   user: process.env.AICRAFTER_DB_USER,
-//   password:  process.env.AICRAFTER_DB_PASSWORD, 
-//   server: process.env.AICRAFTER_DB_SERVER, 
-//   database: 'AiCrafter',
-//   options: {
-//     encrypt: true, 
-//     trustServerCertificate: false, 
-//   }
-// };
-// sql.connect(config).then(pool => {
-//   // You can execute SQL queries here
-//   console.log('Connected to SQL Server successfully!');
-// }).catch(error => {
-//   console.error('Error connecting to SQL Server:', error);
-// });
-
-// Function to execute a stored procedure with parameters
-// function execApi(procName, params) {
-//   return new Promise((resolve, reject) => {
-//     connection.query(`CALL ${procName}(?)`, [params], (error, results, fields) => {
-//       if (error) {
-//         reject(error);
-//       }
-//       resolve(results);
-//     });
-//   });
-// }
-
-//---------------------------------
-//---------------------------------
-
 app.use(cors(corsOptions)); // Use cors middleware with options
-
 
 app.get('/hello', (req, res) => {
     res.send('Hello World!');
@@ -161,46 +124,108 @@ app.get('/Get_Gpt_Deployments', async  (req, res) => {
 });
 
 
+app.get('/submitPrompt', async (req, res) => {
+  const { projectId, deploymentCode, user, polygon } = req.query;
+
+  const port = process.env.PORT || 8080
+
+  try {
+
+    // Construct the full URL for the /generateProjectMessage endpoint
+    const generateProjectMessageUrl = `http://localhost:${port}/generateProjectMessage?projectId=${projectId}&deploymentCode=${deploymentCode}&user=${user}`;
+    const projectMessageResponse = await axios.get(generateProjectMessageUrl);
+    console.log('projectMessageResponse',projectMessageResponse.data );
+
+    const chatPromptHistory = projectMessageResponse.data.at(0).Body
+    const body ={
+      // polygon: polygon,
+      chatInput: chatPromptHistory,
+    }
+    const chatUrl = `http://localhost:${port}/chat`
+    const chatResponse = await axios.post(chatUrl, body);
+    console.log('chatResponse',chatResponse.data );
+
+    const messageId = projectMessageResponse.data.at(0).Id
+    const assistant = chatResponse.data.choices.at(0).message.content
+    const {
+      prompt_tokens,
+      completion_tokens,
+      total_tokens,
+  } = chatResponse.data ;
+
+    const upsertBody = {
+      id: messageId,
+      assistant,
+      prompt_tokens,
+      completion_tokens,
+      total_tokens,
+    }
+
+    const upsertUrl = `http://localhost:${port}/upsertMessages`
+    const upsertResponse = await axios.post(upsertUrl, upsertBody);
+
+    // Combine responses or handle them as needed
+    res.json({
+      assistant,
+      upsertResponse: upsertResponse.data.at(0)
+    });
+  } catch (error) {
+    console.error('___Error calling internal endpoints:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 app.post('/chat', async (req, res) => {
-  const { projectId, polygon, promptHistory } = req.body;
-  console.log('projectId', projectId);
-  console.log('polygon', polygon);
-  console.log('promptHistory', promptHistory);
+  const { projectId, polygon, chatInput } = req.body;
+  // console.log('projectId', projectId);
+  // console.log('polygon', polygon);
+  // const parsedBody = chatInput// JSON.parse(chatInput)
+      const parsedBody = chatInput
+    // const parsedBody = {
+    //   "messages": chatInput.messages,
+    // // [
+    // //         {
+    // //             "role": "system",
+    // //             "content": "fsdfdsfdsf"
+    // //         },
+    // //         {
+    // //             "role": "user",
+    // //             "content": "I want 6 apartment buildings, with 4 floors"
+    // //         },
+    // // ],
+    
+    //   // "max_tokens": 800,
+    //   "temperature": 0.7,
+    //   "frequency_penalty": 0,
+    //   "presence_penalty": 0,
+    //   "top_p": 0.95,
+    //   "stop": null
+    // } 
+  console.log('___body_____', typeof parsedBody, parsedBody);
+
 
     // Validate inputs here as needed
 
   const url = "https://oai-text-eastus-hackathon.openai.azure.com/openai/deployments/gpt-35-turbo-0613/chat/completions?api-version=2023-07-01-preview" 
-
-  const body = {
-      "messages": promptHistory,
-      "max_tokens": 800,
-      "temperature": 0.7,
-      "frequency_penalty": 0,
-      "presence_penalty": 0,
-      "top_p": 0.95,
-      "stop": null
-    } 
-
-    const config = {
-      headers: {
-        "Content-Type": 'application/json',
-         "api-key":  process.env.AICRAFTER_OPENAI_API_KEY 
-      }
+  const config = {
+    headers: {
+      "Content-Type": 'application/json',
+       "api-key":  process.env.AICRAFTER_OPENAI_API_KEY 
     }
+  }
 
-    try {
-      const response = await axios.post(
-          url,
-          body,
-          config
-      );
+  try {
+    const response = await axios.post(
+        url,
+        parsedBody,
+        config
+    );
 
-      res.json(response.data);
-    } catch (error) {
-      console.error('API call failed:', error);
-      res.status(500).send('Internal Server Error');
-    }
+    res.json(response.data);
+  } catch (error) {
+    console.error('____API call failed:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 // error handling middleware should be loaded after the loading the routes
