@@ -69,6 +69,20 @@ app.get('/hello', (req, res) => {
     res.send('Hello World!');
 });
 
+app.get('/getMessage', async (req, res) => {
+  const id = req.query.id;
+
+  const procName = 'Get_Message'; 
+  const params = { id: +id }; 
+  try {
+    const result = await execApi(procName, params);
+    return res.send(result);
+  } catch (error) {
+    console.error('Error executing stored procedure:', error);
+    return res.status(500).send('Error message explaining the issue');
+  }
+});
+
 app.get('/getMessagesByProjectId', async (req, res) => {
   const projectId = req.query.projectId;
 
