@@ -134,11 +134,12 @@ app.get('/submitPrompt', async (req, res) => {
     // Construct the full URL for the /generateProjectMessage endpoint
     const generateProjectMessageUrl = `http://localhost:${port}/generateProjectMessage?projectId=${projectId}&deploymentCode=${deploymentCode}&user=${user}`;
     const projectMessageResponse = await axios.get(generateProjectMessageUrl);
-    console.log('projectMessageResponse',projectMessageResponse.data );
 
     const chatPromptHistory = projectMessageResponse.data.at(0).Body
+    const gptUrl = projectMessageResponse.data.at(0).Url 
+
     const body ={
-      // polygon: polygon,
+      chatUrl: gptUrl,
       chatInput: chatPromptHistory,
     }
     const chatUrl = `http://localhost:${port}/chat`
@@ -176,11 +177,11 @@ app.get('/submitPrompt', async (req, res) => {
 });
 
 app.post('/chat', async (req, res) => {
-  const { projectId, polygon, chatInput } = req.body;
+  const { chatUrl, chatInput } = req.body;
   // console.log('projectId', projectId);
   // console.log('polygon', polygon);
   // const parsedBody = chatInput// JSON.parse(chatInput)
-      const parsedBody = chatInput
+    const parsedBody = chatInput
     // const parsedBody = {
     //   "messages": chatInput.messages,
     // // [
@@ -203,10 +204,8 @@ app.post('/chat', async (req, res) => {
     // } 
   console.log('___body_____', typeof parsedBody, parsedBody);
 
-
-    // Validate inputs here as needed
-
-  const url = "https://oai-text-eastus-hackathon.openai.azure.com/openai/deployments/gpt-35-turbo-0613/chat/completions?api-version=2023-07-01-preview" 
+  // const url = "https://oai-text-eastus-hackathon.openai.azure.com/openai/deployments/gpt-35-turbo-0613/chat/completions?api-version=2023-07-01-preview" 
+  // const url = "https://oai-text-eastus-hackathon.openai.azure.com/openai/deployments/gpt-4-0125-Preview/chat/completions?api-version=2023-07-01-preview"
   const config = {
     headers: {
       "Content-Type": 'application/json',
@@ -216,7 +215,7 @@ app.post('/chat', async (req, res) => {
 
   try {
     const response = await axios.post(
-        url,
+        chatUrl,
         parsedBody,
         config
     );
